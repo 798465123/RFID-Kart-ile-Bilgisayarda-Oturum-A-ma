@@ -1,0 +1,50 @@
+#include <Keyboard.h>
+#include <SPI.h>      //SPI, keyboard ve RFID kütüphanelerimizi ekliyoruz
+#include <RFID.h>
+
+#define SS_PIN 10
+#define RST_PIN 9
+
+RFID rfid(SS_PIN, RST_PIN);
+int ledpini = 13;
+
+void setup()
+{
+  pinMode(ledpini, OUTPUT);
+  SPI.begin();           //SPI iletişimini başlatıyoruz
+  rfid.init();
+  Keyboard.begin();      //Klavye olarak kullanmak için bu özelliği açıyoruz.
+  digitalWrite(ledpini, LOW);
+}
+
+void loop()
+{
+
+  if (rfid.isCard()) {                 //Yeni bir RFID kart okundu mu onu kontrol ediyoruz
+    if (rfid.readCardSerial()) {
+      if (rfid.serNum[0] == 38                                  //Okunan RFID kartının bize özel kart olup olmadığı RFID kart numarasının ilk 5 hanesi ile kontrol ediliyor.
+          && rfid.serNum[1] == 220      //Buradaki 5 adet sayıyı kendi kartınızın sayıları ile değiştirmeniz gerekecek.
+          && rfid.serNum[2] == 83
+          && rfid.serNum[3] == 131
+          && rfid.serNum[4] == 42
+         ) {
+        Keyboard.press(KEY_RETURN);    //Klavyeden ENTER tuşuna basıyoruz
+        delay(50);
+        Keyboard.releaseAll();          //Basılı olan tuşu geri çekmek için bu fonksiyonu kullanıyoruz. Bu fonksiyon olmazsa enter tuşu hep basılıkalıyor
+        delay(100);
+        Keyboard.print("zaferatabey4460");    //Buraya Bilgisayar şifreniz gelecek
+        delay(50);
+        Keyboard.press(KEY_RETURN);    //Klavyeden ENTER tuşuna basıyoruz
+        delay(100);
+        Keyboard.releaseAll();          //Basılı olan tuşu geri çekmek için bu fonksiyonu kullanıyoruz. Bu fonksiyon olmazsa enter tuşu hep basılıkalıyor
+      } else {
+        digitalWrite(ledpini, HIGH);   //Farklı kart okutulduğunda Arduino üzerindeki ledi yaktırdım. Siz isterseniz Buzzer veya başka bir led kullanabilirsiniz.
+        delay(10);
+      }
+      digitalWrite(ledpini, LOW);
+    }
+  }
+
+
+  rfid.halt();
+}
